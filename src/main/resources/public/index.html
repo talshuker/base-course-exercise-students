@@ -1,0 +1,227 @@
+<!doctype html>
+<html>
+    <head>
+        <title>launches-ui</title>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="./leaflet/dist/leaflet.css">
+        <link rel="stylesheet" href="./style.css">
+        <script src="/leaflet/dist/leaflet.js"></script>
+        <script src="/request/request.js"></script>
+        <style>
+            #mapid
+            {
+                height: 100vh;
+                background-color: black;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="mapid"></div>
+        <script>
+            var map = L.map('mapid', {maxZoom: 50}).setView([32, 35], 8)
+            L.tileLayer('http://rol-dev-geo-1:8080/wmts/BestMap-gm_flat_ll/{z}-{x}-{y}.png').addTo(map)
+            // L.tileLayer('http://rol-dev-geo-1:8080/wmts/IsraelVectorBasis-gm_flat_ll/{z}-{x}-{y}.png').addTo(map)
+            
+            var markersLayer = new L.LayerGroup();
+            var isInLaunchingCreation = false
+            var lanches = [];
+            getAllLaunches();
+
+            function sendToServer(url, callback){
+                var hr = new XMLHttpRequest();
+                
+                hr.onreadystatechange = function() {
+                    if (hr.readyState == 4) {
+                        callback(JSON.parse(hr.response))
+                    }
+                }
+
+                hr.open('GET', url, true)
+                hr.send(null);
+            }
+
+            function getAllLaunches(){
+                sendToServer('/launches', (response) => {
+                    response.forEach(launch => {
+                        let mapLaunch = new Launching([launch.launchPoint.lat,launch.launchPoint.lon]);
+                        mapLaunch.setHitPoint( [launch.impactPoint.lat, launch.impactPoint.lon]);
+                        mapLaunch.launchMarker.addTo(map);
+                        mapLaunch.hitMarker.addTo(map);
+                        mapLaunch.connectingLine.addTo(map);
+                        lanches.push(mapLaunch);
+                    });
+                })
+            }
+
+            function onMapClick(e) {
+                // var latlng = map.mouseEventToLatLng(e.originalEvent)
+                let latlng = e.latlng
+                
+                if(!isInLaunchingCreation) {
+                    isInLaunchingCreation = true;
+                    var launching = new Launching([latlng.lat, latlng.lng]);
+                    // launch_lat, launch_lon, impact_lat, impact_lon    
+                    launching.launchMarker.addTo(map)
+                    lanches.push(launching)
+                } else {
+                    isInLaunchingCreation = false;
+                    var launching = lanches[lanches.length - 1]
+                    launching.setHitPoint([latlng.lat, latlng.lng])
+                    sendToServer('/createLaunch?launch_lat='+launching.launcPoint.lat+'&launch_lon='+launching.launcPoint.lng+'&impact_lat='+launching.hitPoint.lat+'&impact_lon='+launching.hitPoint.lng,
+                                    function(response){
+                                        var launchId = response
+                                        launching.id = launchId
+                                        console.log('id is: ' + launchId);
+                                    })
+                    
+                    launching.hitMarker.addTo(map)
+                    launching.connectingLine.addTo(map)
+                }
+            
+                console.log("lat: " + latlng.lat + " long: " + latlng.lng)
+            }
+
+            map.on('click', onMapClick)
+
+            class Launching {
+                constructor(launcPoint, hitPoint){
+                    this.launchIcon = L.icon({
+                        iconUrl: 'images/Launch.png',
+
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 16]
+                    });   
+
+                    this.impactIcon = L.icon({
+                        iconUrl: 'images/Hit.png',
+
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 16]
+                    });
+
+                    this.launcPoint = new L.LatLng(launcPoint[0], launcPoint[1]);
+                    // this.hitPoint = new L.LatLng(hitPoint[0], hitPoint[1]);
+                     
+                    this.launchMarker = L.marker([this.launcPoint.lat, this.launcPoint.lng],  
+                                                {draggable: true,
+                                                icon: this.launchIcon});
+                    let launch = this;
+                    this.launchMarker.on('drag', function(e) {
+                        var latlng = e.latlng
+                        launch.launcPoint = latlng;
+                        launch.connectingLine.setLatLngs([launch.launcPoint,launch.hitPoint]);
+                    })
+                    this.launchMarker.on('mouseup', function(e) {
+                        var latlng = e.latlng
+                        launch.launcPoint = latlng;
+                        sendToServer('/updateLaunch?id='+launch.id+'&launch_lat='+launch.launcPoint.lat+'&launch_lon='+launch.launcPoint.lng,
+                                        function(response){
+                                            if (response.success) console.log('update successfull');
+                                            else console.log('update failed');
+                                        }
+                                    )
+                    });
+                    
+                    // this.hitMarker = L.marker([hitPoint.lat, hitPoint.lng],  {draggable: true});
+                    // this.connectingLine =  L.polyline([this.launcPoint,this.hitPoint], 
+                    //                        { color: 'blue'});
+                }
+                
+                setHitPoint(hitPoint) {
+                    this.hitPoint = new L.LatLng(hitPoint[0], hitPoint[1]);
+                    
+                    this.hitMarker = L.marker([this.hitPoint.lat, this.hitPoint.lng],  
+                                              {draggable: true,
+                                               icon: this.impactIcon});
+                    let launch = this;
+                    this.hitMarker.on('drag', function(e) {
+                        var latlng = e.latlng
+                        launch.hitPoint = latlng;
+                        launch.connectingLine.setLatLngs([launch.launcPoint,launch.hitPoint]);
+                    });
+                    this.hitMarker.on('mouseup', function(e) {
+                        var latlng = e.latlng
+                        launch.hitPoint = latlng;
+                        sendToServer('/updateLaunch?id='+launch.id+'&impact_lat='+launch.hitPoint.lat+'&impact_lon='+launch.hitPoint.lng,
+                                        function(response){
+                                            if (response.success) console.log('update successfull');
+                                            else console.log('update failed');
+                                        }
+                                    )
+                    });
+
+
+                    this.connectingLine = L.polyline([this.launcPoint,this.hitPoint], 
+                                           { color: 'yellow'}).addTo(map)
+                }
+            }
+
+            
+            // --- AIRPLANE ----
+
+            var airplanes = {};
+            setTimeout(()=>setInterval(updateAirplanes, 100), 1000)
+            
+            function updateAirplanes(){
+                sendToServer('/airSituation', (response)=>{
+                    Object.keys(airplanes).forEach(id => {
+                        if (!response.find(airplane=>airplane.id==id)){
+                            delete airplanes[id];
+                            console.log("Airplane deleted")
+                        }
+                    })
+                    response.forEach(airplane=>{
+                        let existing = airplanes[airplane.id]
+                        if (existing){
+                            existing.update(airplane);
+                        }
+                        else {
+                            airplanes[airplane.id]=new Airplane(airplane);
+                        }
+                    })
+                })
+            }
+
+            class Airplane {  
+                constructor(airplaneFromServer){
+                    this.id = airplaneFromServer.id;
+                    this.kind = airplaneFromServer.airplaneKind;
+                    this.update(airplaneFromServer)
+
+                    this.icon = L.divIcon({
+                        // iconUrl: 'images/'+this.kind+'.png',
+                        html: "<div style='transform: rotate("+this.azimuth+"deg);background-image: url(\"images/"+this.kind+".svg\")'></div>",
+                        className: 'airplane-icon',
+                        iconSize: [30, 32],
+                        iconAnchor: [15, 16]
+                    });  
+
+                    this.marker = L.marker([this.latitude, this.longitude],  
+                                                {draggable: false,
+                                                icon: this.icon,
+
+                                            });
+                    this.marker.addTo(map);
+                }
+
+                update(airplaneFromServer){
+                    this.latitude = airplaneFromServer.latitude;
+                    this.longitude = airplaneFromServer.longitude;
+                    this.azimuth = airplaneFromServer.azimuth;
+                    this.velocity = airplaneFromServer.velocity;
+                    if (this.marker) {
+                        this.marker.setLatLng([airplaneFromServer.latitude, airplaneFromServer.longitude])
+                        this.marker.setIcon(L.divIcon({
+                            html: "<div style='transform: rotate("+this.azimuth+"deg);background-image: url(\"images/"+this.kind+".svg\")'></div>",
+                            className: 'airplane-icon',
+                            iconSize: [30, 32],
+                            iconAnchor: [15, 16]
+                        }))
+                    }
+                }
+            }
+
+        </script>
+        
+    </body>
+</html>

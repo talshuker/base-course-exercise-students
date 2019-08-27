@@ -1,0 +1,15 @@
+.leaflet-container {
+	background: black;
+	outline: 0;
+	}
+
+.airplane-icon{
+	background: none;
+}
+
+.airplane-icon div {
+    height: 35px;
+    width: 35px;
+    background-size: contain;
+    background-repeat: no-repeat;
+}
