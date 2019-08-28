@@ -166,6 +166,7 @@
                 sendToServer('/airSituation', (response)=>{
                     Object.keys(airplanes).forEach(id => {
                         if (!response.find(airplane=>airplane.id==id)){
+                            airplanes[id].marker.removeFrom(map);
                             delete airplanes[id];
                             console.log("Airplane deleted")
                         }
@@ -185,7 +186,6 @@
             class Airplane {  
                 constructor(airplaneFromServer){
                     this.id = airplaneFromServer.id;
-                    this.kind = airplaneFromServer.airplaneKind;
                     this.update(airplaneFromServer)
 
                     this.icon = L.divIcon({
@@ -205,6 +205,7 @@
                 }
 
                 update(airplaneFromServer){
+                    this.kind = airplaneFromServer.airplaneKind;
                     this.latitude = airplaneFromServer.latitude;
                     this.longitude = airplaneFromServer.longitude;
                     this.azimuth = airplaneFromServer.azimuth;

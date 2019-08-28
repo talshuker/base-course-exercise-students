@@ -12,22 +12,36 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public enum AirplaneKind{
-    Krav(null, "קרב"), F15(Krav, "F15"), F16(Krav, "F16"),
-    Katmam(null, "כטמ\"מ"), Zik(Katmam, "זיק"), Shoval(Katmam, "שובל"),
-    Helicopter(null, "מסוק"), Maskar(Helicopter, "מסק\"ר"), Masaar(Helicopter, "מסע\"ר "),
+    Krav(null,"קרב", 10.0), F15(Krav, "F15"), F16(Krav, "F16"),
+    Katmam(null, "כטמ\"מ", 0.5), Zik(Katmam, "זיק"), Shoval(Katmam, "שובל"),
+    Helicopter(null, "מסוק", 1.5), Maskar(Helicopter, "מסק\"ר"), Masaar(Helicopter, "מסע\"ר "),
     Yanshoof(Masaar, "ינשוף"), Saraf(Maskar, "שרף");
 
 
-    private AirplaneKind parent;
-    private String displayName;
+    private final AirplaneKind parent;
+    private final String displayName;
+    private final double velocityFactor;
 
-    AirplaneKind(AirplaneKind parent, String displayName) {
+    AirplaneKind(AirplaneKind parent, String displayName){
+        this(parent, displayName, null);
+    }
+
+    AirplaneKind(AirplaneKind parent, String displayName, Double velocityFactor) {
         this.parent = parent;
         this.displayName = displayName;
+
+        if (velocityFactor != null)
+            this.velocityFactor = velocityFactor;
+        else
+            this.velocityFactor = parent.velocityFactor;
     }
 
     public String getDisplayName() {
         return displayName;
+    }
+
+    public double getVelocityFactor() {
+        return velocityFactor;
     }
 
     // serves as a cache for LeafKinds()

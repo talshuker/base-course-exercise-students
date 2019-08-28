@@ -16,13 +16,15 @@ import java.util.concurrent.TimeUnit;
 public class SimulativeAirSituationProvider implements AirSituationProvider {
 
     private static final int INITIAL_NUM_OF_AIRPLANES = 50;
-    private static final double CHANCE_FOR_NUMBER_CHANGE = 0.0;
+    private static final double CHANCE_FOR_NUMBER_CHANGE = 0.005;
+    private static final double CHANCE_FOR_AZIMUTH_CHANGE = 0.05;
     private static final int STEP_SIZE = 10;
     private static final int SIMULATION_INTERVAL_MILLIS = 100;
-    private static final double LAT_MIN = 28.000;
-    private static final double LAT_MAX = 32.000;
-    private static final double LON_MIN = 34.000;
-    private static final double LON_MAX = 36.000;
+    private static final double LAT_MIN = 27.000;
+    private static final double LAT_MAX = 33.000;
+    private static final double LON_MIN = 30.000;
+    private static final double LON_MAX = 41.000;
+    private static final double AZIMUTH_STEP = STEP_SIZE / (1000.0 / SIMULATION_INTERVAL_MILLIS);
 
 
     // Scheduler to run advancement task
@@ -40,7 +42,7 @@ public class SimulativeAirSituationProvider implements AirSituationProvider {
         for (int i = 0; i < INITIAL_NUM_OF_AIRPLANES; i++) {
             addNewAirplane();
         }
-        lastId=INITIAL_NUM_OF_AIRPLANES;
+        //lastId=INITIAL_NUM_OF_AIRPLANES;
 
         executor.scheduleAtFixedRate(this::UpdateSituation, 0, SIMULATION_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
     }
@@ -52,9 +54,9 @@ public class SimulativeAirSituationProvider implements AirSituationProvider {
         AirplaneKind kind = airplaneKinds.get(random.nextInt(airplaneKinds.size()));
         Airplane airplane = new Airplane(kind, lastId++);
         airplane.latitude = generateRandomDoubleInRange(LAT_MIN, LAT_MAX);
-        airplane.longitude = generateRandomDoubleInRange(LON_MIN, LON_MAX);
+        airplane.longitude = generateRandomDoubleInRangeWithNormalDistribution(LON_MIN, LON_MAX);
         airplane.azimuth = generateRandomDoubleInRange(0,360);
-        airplane.velocity = generateRandomDoubleInRange(20, 200);
+        airplane.velocity = generateRandomDoubleInRange(40, 70)*airplane.getAirplaneKind().getVelocityFactor();
         airplanes.add(airplane);
     }
 
@@ -67,7 +69,13 @@ public class SimulativeAirSituationProvider implements AirSituationProvider {
 
 
             airplanes.forEach(airplane -> {
-                airplane.azimuth += generateRandomDoubleInRange(-STEP_SIZE, STEP_SIZE)/8;
+                if (random.nextDouble()<CHANCE_FOR_AZIMUTH_CHANGE)
+                    if (random.nextDouble()<CHANCE_FOR_AZIMUTH_CHANGE)
+                        airplane.radialAcceleration = generateRandomDoubleInRange(-AZIMUTH_STEP,AZIMUTH_STEP);
+                    else
+                        airplane.radialAcceleration = generateRandomDoubleInRange(0,1.5*airplane.radialAcceleration);
+
+                airplane.azimuth += airplane.radialAcceleration;
                 airplane.latitude += Math.sin(worldAzimuthToEuclidRadians(airplane.azimuth)) * airplane.velocity/100000;
                 airplane.longitude += Math.cos(worldAzimuthToEuclidRadians(airplane.azimuth)) * airplane.velocity/100000;
                 if (airplane.latitude<LAT_MIN || airplane.latitude>LAT_MAX || airplane.longitude<LON_MIN || airplane.longitude>LON_MAX)
@@ -94,7 +102,27 @@ public class SimulativeAirSituationProvider implements AirSituationProvider {
      * Generate a double between min (inclusive) and max (exclusive).
      */
     private double generateRandomDoubleInRange(double min, double max) {
+        if (min>max){
+            double temp = min;
+            min = max;
+            max = temp;
+        }
         return random.nextDouble() * (max - min) + min;
+    }
+
+    /**
+     * Generate a double between min (inclusive) and max (exclusive).
+     */
+    private double generateRandomDoubleInRangeWithNormalDistribution(double min, double max) {
+        if (min > max) {
+            double temp = min;
+            min = max;
+            max = temp;
+        }
+        double num = random.nextGaussian() * (max - min) / 8 + (max + min) / 2;
+        num = Math.max(min+0.1, num);
+        num = Math.min(max-0.1, num);
+        return num;
     }
 
     @Override

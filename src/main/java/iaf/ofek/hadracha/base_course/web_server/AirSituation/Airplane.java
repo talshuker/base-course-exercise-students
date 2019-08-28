@@ -23,6 +23,11 @@ public class Airplane implements Entity<Airplane> {
      */
     public double velocity;
 
+    /**
+     * The acceleration of change of azimuth
+     */
+    double radialAcceleration;
+
     public Airplane(AirplaneKind airplaneKind, int id) {
         this.airplaneKind = airplaneKind;
         this.id = id;
