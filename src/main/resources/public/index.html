@@ -5,8 +5,7 @@
         <meta charset="utf-8">
         <link rel="stylesheet" href="./leaflet/dist/leaflet.css">
         <link rel="stylesheet" href="./style.css">
-        <script src="/leaflet/dist/leaflet.js"></script>
-        <script src="/request/request.js"></script>
+        
         <style>
             #mapid
             {
@@ -17,12 +16,18 @@
     </head>
     <body>
         <div id="mapid"></div>
+        <div style="position: absolute; right: 10px; top: 10px; z-index: 10000;"><button id="launchModeBtn">דקור שיגור חדש</button></div>
+
+        <script src="/jquery/dist/jquery.js"></script>
+        <script src="/leaflet/dist/leaflet.js"></script>
+        <script src="/request/request.js"></script>
         <script>
             var map = L.map('mapid', {maxZoom: 50}).setView([32, 35], 8)
             L.tileLayer('http://rol-dev-geo-1:8080/wmts/BestMap-gm_flat_ll/{z}-{x}-{y}.png').addTo(map)
             // L.tileLayer('http://rol-dev-geo-1:8080/wmts/IsraelVectorBasis-gm_flat_ll/{z}-{x}-{y}.png').addTo(map)
             
             var markersLayer = new L.LayerGroup();
+            let inCreateLaunchMode = false;
             var isInLaunchingCreation = false
             var lanches = [];
             getAllLaunches();
@@ -40,6 +45,11 @@
                 hr.send(null);
             }
 
+            $("#launchModeBtn").click(function () {
+                inCreateLaunchMode = true;
+                $(this).addClass("active-button");
+            })
+
             function getAllLaunches(){
                 sendToServer('/launches', (response) => {
                     response.forEach(launch => {
@@ -54,6 +64,9 @@
             }
 
             function onMapClick(e) {
+                if (!inCreateLaunchMode)
+                    return;
+
                 // var latlng = map.mouseEventToLatLng(e.originalEvent)
                 let latlng = e.latlng
                 
@@ -64,9 +77,9 @@
                     launching.launchMarker.addTo(map)
                     lanches.push(launching)
                 } else {
-                    isInLaunchingCreation = false;
                     var launching = lanches[lanches.length - 1]
                     launching.setHitPoint([latlng.lat, latlng.lng])
+                    
                     sendToServer('/createLaunch?launch_lat='+launching.launcPoint.lat+'&launch_lon='+launching.launcPoint.lng+'&impact_lat='+launching.hitPoint.lat+'&impact_lon='+launching.hitPoint.lng,
                                     function(response){
                                         var launchId = response
@@ -76,6 +89,10 @@
                     
                     launching.hitMarker.addTo(map)
                     launching.connectingLine.addTo(map)
+
+                    isInLaunchingCreation = false;
+                    inCreateLaunchMode = false;
+                    $("#launchModeBtn").removeClass("active-button")
                 }
             
                 console.log("lat: " + latlng.lat + " long: " + latlng.lng)
