@@ -20,18 +20,9 @@
 
         <script src="/jquery/dist/jquery.js"></script>
         <script src="/leaflet/dist/leaflet.js"></script>
-        <script src="/request/request.js"></script>
+        <!-- <script src="/request/request.js"></script> -->
         <script>
-            var map = L.map('mapid', {maxZoom: 50}).setView([32, 35], 8)
-            L.tileLayer('http://rol-dev-geo-1:8080/wmts/BestMap-gm_flat_ll/{z}-{x}-{y}.png').addTo(map)
-            // L.tileLayer('http://rol-dev-geo-1:8080/wmts/IsraelVectorBasis-gm_flat_ll/{z}-{x}-{y}.png').addTo(map)
-            
-            var markersLayer = new L.LayerGroup();
-            let inCreateLaunchMode = false;
-            var isInLaunchingCreation = false
-            var lanches = [];
-            getAllLaunches();
-
+            // calls a URL with GET, and calls the callback with the parsed JSON as a response
             function sendToServer(url, callback){
                 var hr = new XMLHttpRequest();
                 
@@ -44,6 +35,27 @@
                 hr.open('GET', url, true)
                 hr.send(null);
             }
+
+
+            let clientId;
+            // Login (to get a client id cookie) on load
+            sendToServer('/login', response=> {
+                clientId = response.clientId;
+                console.log("ClientID: " + clientId)
+            })
+
+            // ---------------- Launches -------------------
+
+
+            var map = L.map('mapid', {maxZoom: 50}).setView([32, 35], 8)
+            L.tileLayer('http://rol-dev-geo-1:8080/wmts/BestMap-gm_flat_ll/{z}-{x}-{y}.png').addTo(map)
+            // L.tileLayer('http://rol-dev-geo-1:8080/wmts/IsraelVectorBasis-gm_flat_ll/{z}-{x}-{y}.png').addTo(map)
+            
+            var markersLayer = new L.LayerGroup();
+            let inCreateLaunchMode = false;
+            var isInLaunchingCreation = false
+            var lanches = [];
+            getAllLaunches();
 
             $("#launchModeBtn").click(function () {
                 inCreateLaunchMode = true;
@@ -80,7 +92,7 @@
                     var launching = lanches[lanches.length - 1]
                     launching.setHitPoint([latlng.lat, latlng.lng])
                     
-                    sendToServer('/createLaunch?launch_lat='+launching.launcPoint.lat+'&launch_lon='+launching.launcPoint.lng+'&impact_lat='+launching.hitPoint.lat+'&impact_lon='+launching.hitPoint.lng,
+                    sendToServer('/launches/createLaunch?launch_lat='+launching.launcPoint.lat+'&launch_lon='+launching.launcPoint.lng+'&impact_lat='+launching.hitPoint.lat+'&impact_lon='+launching.hitPoint.lng,
                                     function(response){
                                         var launchId = response
                                         launching.id = launchId
@@ -131,7 +143,7 @@
                     this.launchMarker.on('mouseup', function(e) {
                         var latlng = e.latlng
                         launch.launcPoint = latlng;
-                        sendToServer('/updateLaunch?id='+launch.id+'&launch_lat='+launch.launcPoint.lat+'&launch_lon='+launch.launcPoint.lng,
+                        sendToServer('/launches/updateLaunch?id='+launch.id+'&launch_lat='+launch.launcPoint.lat+'&launch_lon='+launch.launcPoint.lng,
                                         function(response){
                                             if (response.success) console.log('update successfull');
                                             else console.log('update failed');
@@ -159,7 +171,7 @@
                     this.hitMarker.on('mouseup', function(e) {
                         var latlng = e.latlng
                         launch.hitPoint = latlng;
-                        sendToServer('/updateLaunch?id='+launch.id+'&impact_lat='+launch.hitPoint.lat+'&impact_lon='+launch.hitPoint.lng,
+                        sendToServer('/launches/updateLaunch?id='+launch.id+'&impact_lat='+launch.hitPoint.lat+'&impact_lon='+launch.hitPoint.lng,
                                         function(response){
                                             if (response.success) console.log('update successfull');
                                             else console.log('update failed');
@@ -218,19 +230,26 @@
                                                 icon: this.icon,
 
                                             });
+                    this.marker.bindTooltip(airplaneFromServer.airplaneKind);
                     this.marker.addTo(map);
                 }
 
                 update(airplaneFromServer){
                     this.kind = airplaneFromServer.airplaneKind;
-                    this.latitude = airplaneFromServer.latitude;
-                    this.longitude = airplaneFromServer.longitude;
+                    this.latitude = airplaneFromServer.coordinates.lat;
+                    this.longitude = airplaneFromServer.coordinates.lon;
                     this.azimuth = airplaneFromServer.azimuth;
                     this.velocity = airplaneFromServer.velocity;
                     if (this.marker) {
-                        this.marker.setLatLng([airplaneFromServer.latitude, airplaneFromServer.longitude])
+                        this.marker.setLatLng([this.latitude, this.longitude])
+                        
+                        let iconColor;
+                        if (!airplaneFromServer.controllerClientId) iconColor="";
+                        else if (airplaneFromServer.controllerClientId == clientId) iconColor = "_green";
+                        else iconColor = "_gray";
+
                         this.marker.setIcon(L.divIcon({
-                            html: "<div style='transform: rotate("+this.azimuth+"deg);background-image: url(\"images/"+this.kind+".svg\")'></div>",
+                            html: "<div style='transform: rotate("+this.azimuth+"deg);background-image: url(\"images/"+this.kind+iconColor+".svg\")'></div>",
                             className: 'airplane-icon',
                             iconSize: [30, 32],
                             iconAnchor: [15, 16]
@@ -238,6 +257,71 @@
                     }
                 }
             }
+
+
+            //----------- Ejected Pilots ---------------------
+
+            var ejections = {};
+            setTimeout(()=>setInterval(updateEjections, 1000), 1000)
+            
+            function updateEjections(){
+                sendToServer('/ejectedPilotRescue/infos', (response)=>{
+                    Object.keys(ejections).forEach(id => {
+                        if (!response.find(ejection=>ejection.id==id)){
+                            ejections[id].marker.removeFrom(map);
+                            delete ejections[id];
+                        }
+                    })
+                    response.forEach(ejection=>{
+                        let existing = ejections[ejection.id]
+                        if (existing){
+                            existing.update(ejection);
+                        }
+                        else {
+                            ejections[ejection.id]=new Ejection(ejection);
+                        }
+                    })
+                })
+            }
+
+            class Ejection {  
+                constructor(ejectionFromServer){
+                    this.id = ejectionFromServer.id;                  
+                    this.marker = L.marker([0, 0], {draggable: false});
+                    
+                    this.update(ejectionFromServer)
+                    
+                    this.marker.addTo(map);
+
+                    this.marker.on("mouseup", ()=>this.takeResponsibility(this.id));
+                }
+
+                update(ejectionFromServer){
+                    this.latitude = ejectionFromServer.coordinates.lat;
+                    this.longitude = ejectionFromServer.coordinates.lon;
+                    
+                    if (this.marker) {
+                        this.marker.setLatLng([this.latitude, this.longitude])
+                        this.marker.bindTooltip(ejectionFromServer.pilotName);
+                        
+                        let iconColor;
+                        if (!ejectionFromServer.rescuedBy) iconColor="orange";
+                        else if (ejectionFromServer.rescuedBy == clientId) iconColor = "green";
+                        else iconColor = "gray";
+
+                        this.marker.setIcon(L.icon({
+                            iconUrl: 'images/ejection_'+iconColor+'.png',
+                            iconSize: [30, 30],
+                            iconAnchor: [15, 30]
+                        }))
+                    }
+                }
+
+                takeResponsibility(id) {
+                    fetch('/ejectedPilotRescue/takeResponsibility?ejectionId='+id);
+                }
+            }
+
 
         </script>
         

@@ -1,15 +1,15 @@
 package iaf.ofek.hadracha.base_course.web_server.Launches;
 
 import iaf.ofek.hadracha.base_course.web_server.Data.Entity;
-import org.springframework.util.Assert;
+import iaf.ofek.hadracha.base_course.web_server.Data.Coordinates;
 
 public class Launch implements Entity<Launch> {
 
     private int id;
-    public Nz launchPoint;
-    public Nz impactPoint;
+    public Coordinates launchPoint;
+    public Coordinates impactPoint;
 
-    public Launch(Nz launchPoint, Nz impactPoint) {
+    public Launch(Coordinates launchPoint, Coordinates impactPoint) {
         this.launchPoint = launchPoint;
         this.impactPoint = impactPoint;
     }

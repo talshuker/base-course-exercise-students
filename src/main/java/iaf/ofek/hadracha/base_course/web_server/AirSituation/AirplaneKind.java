@@ -44,6 +44,16 @@ public enum AirplaneKind{
         return velocityFactor;
     }
 
+    /**
+     * @return true iff this kind is a descendant of the given kind (=the given kind is an ancestor of this).
+     * For example - F15 is a descendant of Krav, and Saraf is a descendant of both Helicopter and Maskar.
+     */
+    public boolean isDescendantOf(AirplaneKind kind) {
+        if (this == kind) return true;
+        if (parent == null) return false;
+        return parent.isDescendantOf(kind);
+    }
+
     // serves as a cache for LeafKinds()
     private static List<AirplaneKind> leaves;
 

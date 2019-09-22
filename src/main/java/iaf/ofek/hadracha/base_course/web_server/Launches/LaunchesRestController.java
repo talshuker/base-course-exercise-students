@@ -1,18 +1,20 @@
 package iaf.ofek.hadracha.base_course.web_server.Launches;
 
 import iaf.ofek.hadracha.base_course.web_server.Data.CrudDataBase;
-import iaf.ofek.hadracha.base_course.web_server.Data.Entity;
+import iaf.ofek.hadracha.base_course.web_server.Data.Coordinates;
 import iaf.ofek.hadracha.base_course.web_server.Exceptions.UserArgumentException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Optional;
 
-@RestController("/")
+@RestController()
+@RequestMapping("launches")
 public class LaunchesRestController {
     private CrudDataBase dataBase;
 
@@ -20,7 +22,7 @@ public class LaunchesRestController {
         this.dataBase = dataBase;
     }
 
-    @GetMapping("/launches")
+    @GetMapping
     public @NotNull List<Launch> getLaunches(){
         return dataBase.getAllOfType(Launch.class);
     }
@@ -34,7 +36,7 @@ public class LaunchesRestController {
 
         return dataBase.create(
                 new Launch(
-                        new Nz(launchLat, launchLon), new Nz(impactLat, impactLon)
+                        new Coordinates(launchLat, launchLon), new Coordinates(impactLat, impactLon)
                 )
         );
     }

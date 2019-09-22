@@ -2,11 +2,13 @@ package iaf.ofek.hadracha.base_course.web_server.AirSituation;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@RestController("/airSituation")
+@RestController
+@RequestMapping("/airSituation")
 public class AirSituationRestController {
 
     private AirSituationProvider airSituationProvider;
@@ -15,7 +17,7 @@ public class AirSituationRestController {
         this.airSituationProvider = airSituationProvider;
     }
 
-    @GetMapping("/airSituation")
+    @GetMapping
     public List<Airplane> getAirSituation(){
         return airSituationProvider.getAllAirplanes();
     }

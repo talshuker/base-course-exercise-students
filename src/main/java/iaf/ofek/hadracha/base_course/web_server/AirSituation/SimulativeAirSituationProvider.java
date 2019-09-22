@@ -1,5 +1,8 @@
 package iaf.ofek.hadracha.base_course.web_server.AirSituation;
 
+import iaf.ofek.hadracha.base_course.web_server.Utilities.GeographicCalculations;
+import iaf.ofek.hadracha.base_course.web_server.Utilities.RandomGenerators;
+import iaf.ofek.hadracha.base_course.web_server.Data.Coordinates;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -24,21 +27,27 @@ public class SimulativeAirSituationProvider implements AirSituationProvider {
     private static final double LAT_MAX = 33.000;
     private static final double LON_MIN = 30.000;
     private static final double LON_MAX = 41.000;
-    private static final double AZIMUTH_STEP = STEP_SIZE / (1000.0 / SIMULATION_INTERVAL_MILLIS);
+    private static final double AZIMUTH_STEP = STEP_SIZE / (2000.0 / SIMULATION_INTERVAL_MILLIS);
+    private static final double MINIMAL_DISTANCE_FOR_ARRIVAL = 500; // the distance in which an airplane is considered as "arrived", in meters
 
 
-    // Scheduler to run advancement task
+    // Scheduler to run advancement task repeatedly
     private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     // Object that acts as a lock for the updates
     private final Object lock = new Object();
     private final Random random = new Random();
+    private final RandomGenerators randomGenerators;
+    private final GeographicCalculations geographicCalculations;
 
     // The current air situation
     private List<Airplane> airplanes = new ArrayList<>();
     private int lastId = 0;
 
 
-    public SimulativeAirSituationProvider() {
+    public SimulativeAirSituationProvider(RandomGenerators randomGenerators, GeographicCalculations geographicCalculations) {
+        this.randomGenerators = randomGenerators;
+        this.geographicCalculations = geographicCalculations;
+
         for (int i = 0; i < INITIAL_NUM_OF_AIRPLANES; i++) {
             addNewAirplane();
         }
@@ -53,39 +62,74 @@ public class SimulativeAirSituationProvider implements AirSituationProvider {
     private void addNewAirplane() {
         AirplaneKind kind = airplaneKinds.get(random.nextInt(airplaneKinds.size()));
         Airplane airplane = new Airplane(kind, lastId++);
-        airplane.latitude = generateRandomDoubleInRange(LAT_MIN, LAT_MAX);
-        airplane.longitude = generateRandomDoubleInRangeWithNormalDistribution(LON_MIN, LON_MAX);
-        airplane.azimuth = generateRandomDoubleInRange(0,360);
-        airplane.velocity = generateRandomDoubleInRange(40, 70)*airplane.getAirplaneKind().getVelocityFactor();
+        airplane.coordinates=new Coordinates(randomGenerators.generateRandomDoubleInRange(LAT_MIN, LAT_MAX),
+                randomGenerators.generateRandomDoubleInRangeWithNormalDistribution(LON_MIN, LON_MAX));
+        airplane.setAzimuth(randomGenerators.generateRandomDoubleInRange(0,360));
+        airplane.velocity = randomGenerators.generateRandomDoubleInRange(40, 70)*airplane.getAirplaneKind().getVelocityFactor();
         airplanes.add(airplane);
     }
 
     private void UpdateSituation() {
-        synchronized (lock) {
-            if (random.nextDouble() < CHANCE_FOR_NUMBER_CHANGE) { // chance to remove an airplane
-                int indexToRemove = random.nextInt(airplanes.size());
-                airplanes.remove(indexToRemove);
-            }
+        try {
+            synchronized (lock) {
+                if (random.nextDouble() < CHANCE_FOR_NUMBER_CHANGE) { // chance to remove an airplane
+                    int indexToRemove;
+                    do {
+                        indexToRemove = random.nextInt(airplanes.size());
+                    } while (airplanes.get(indexToRemove).isAllocated());// don't remove allocated airplane
+                    airplanes.remove(indexToRemove);
+                }
 
 
-            airplanes.forEach(airplane -> {
-                if (random.nextDouble()<CHANCE_FOR_AZIMUTH_CHANGE)
-                    if (random.nextDouble()<CHANCE_FOR_AZIMUTH_CHANGE)
-                        airplane.radialAcceleration = generateRandomDoubleInRange(-AZIMUTH_STEP,AZIMUTH_STEP);
-                    else
-                        airplane.radialAcceleration = generateRandomDoubleInRange(0,1.5*airplane.radialAcceleration);
+                airplanes.forEach(airplane -> {
+                    airplane.radialAcceleration = calculateNewRadialAcceleration(airplane);
 
-                airplane.azimuth += airplane.radialAcceleration;
-                airplane.latitude += Math.sin(worldAzimuthToEuclidRadians(airplane.azimuth)) * airplane.velocity/100000;
-                airplane.longitude += Math.cos(worldAzimuthToEuclidRadians(airplane.azimuth)) * airplane.velocity/100000;
-                if (airplane.latitude<LAT_MIN || airplane.latitude>LAT_MAX || airplane.longitude<LON_MIN || airplane.longitude>LON_MAX)
-                    airplane.azimuth+=180;
-            });
+                    airplane.setAzimuth(airplane.getAzimuth() + airplane.radialAcceleration);
+                    airplane.coordinates.lat += Math.sin(worldAzimuthToEuclidRadians(airplane.getAzimuth())) * airplane.velocity / 100000;
+                    airplane.coordinates.lon += Math.cos(worldAzimuthToEuclidRadians(airplane.getAzimuth())) * airplane.velocity / 100000;
+                    if (airplane.coordinates.lat < LAT_MIN || airplane.coordinates.lat > LAT_MAX ||
+                            airplane.coordinates.lon < LON_MIN || airplane.coordinates.lon > LON_MAX)
+                        airplane.setAzimuth(airplane.getAzimuth() + 180);
+                });
 
-            if (random.nextDouble() < CHANCE_FOR_NUMBER_CHANGE) { // chance to add an airplane
-                addNewAirplane();
+                if (random.nextDouble() < CHANCE_FOR_NUMBER_CHANGE) { // chance to add an airplane
+                    addNewAirplane();
+                }
             }
         }
+        catch (Exception e){
+            System.err.println(e.getMessage());
+            e.printStackTrace();
+            int x=1;
+        }
+    }
+
+    private double calculateNewRadialAcceleration(Airplane airplane) {
+        if (airplane.isAllocated()) {
+            Coordinates currLocation = airplane.coordinates;
+            Coordinates headingTo = airplane.headingTo;
+
+            if (arrivedToDestination(currLocation, headingTo)) {
+                airplane.raiseArrivedAtDestinationEvent();
+            }
+
+            double azimuthToDestenation = geographicCalculations.azimuthBetween(currLocation, headingTo);
+            double differnceOfAzimuth = 180-geographicCalculations.normalizeAzimuth(azimuthToDestenation - airplane.getAzimuth());
+            double distanceToDestenation = geographicCalculations.distanceBetween(currLocation, headingTo);
+
+            return (differnceOfAzimuth > 0 ? Math.min(AZIMUTH_STEP*10, differnceOfAzimuth/5) : Math.max(-AZIMUTH_STEP*10, differnceOfAzimuth/5))/2;
+        } else {
+            if (random.nextDouble() < CHANCE_FOR_AZIMUTH_CHANGE)       // chance for any change
+                if (random.nextDouble() < CHANCE_FOR_AZIMUTH_CHANGE)   // chance for big change
+                    return randomGenerators.generateRandomDoubleInRange(-AZIMUTH_STEP, AZIMUTH_STEP);
+                else   // small gradual change, with a 66% chance that the size of the acceleration will be reduced
+                    return randomGenerators.generateRandomDoubleInRange(0, 1.5 * airplane.radialAcceleration);
+            return airplane.radialAcceleration;
+        }
+    }
+
+    private boolean arrivedToDestination(Coordinates currLocation, Coordinates headingTo) {
+        return geographicCalculations.distanceBetween(currLocation, headingTo) < MINIMAL_DISTANCE_FOR_ARRIVAL;
     }
 
     /**
@@ -96,50 +140,6 @@ public class SimulativeAirSituationProvider implements AirSituationProvider {
         double inEuclidDegrees = -azimuth + 90;
         return inEuclidDegrees * Math.PI / 180;
 //        return azimuth * Math.PI /180;
-    }
-
-    /**
-     * Generate a double between min (inclusive) and max (exclusive).
-     */
-    private double generateRandomDoubleInRange(double min, double max) {
-        if (min>max){
-            double temp = min;
-            min = max;
-            max = temp;
-        }
-        return random.nextDouble() * (max - min) + min;
-    }
-
-    /**
-     * Generate a double between min (inclusive) and max (exclusive).
-     */
-    private double generateRandomDoubleInRangeWithNormalDistribution(double min, double max) {
-        // In case that min and max are wrong, flip them
-        if (min > max) {
-            double temp = min;
-            min = max;
-            max = temp;
-        }
-
-        // Java's Gaussian generator produces a normal distribution with mean 0 and standard variation 1,
-        // i.e. 68% of the results are in [-1..1] and 95% are in [-2..2].
-        // We use this as our base number, as it is (pseudo) random.
-        double baseNumber = random.nextGaussian();
-
-        // Inflate the "bell" to the relevant range. Then it is divided by 8 because:
-        //  - by 2 because [-1..1] is a range of size 2
-        //  - by 2 to increase the number of results in range from 68% to 95%
-        //  - by 2 to increase the number of results in range from 95% to 99.9%
-        // Total: 2*2*2 = 8
-        double num = baseNumber * (max - min) / 8;
-        // Move mean to mid-range
-        num+= (max + min) / 2;
-
-        // All the results outside the limits will be moved to the limit
-        num = Math.max(min+0.1, num);
-        num = Math.min(max-0.1, num);
-
-        return num;
     }
 
     @Override

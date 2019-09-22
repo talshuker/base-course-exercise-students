@@ -2,6 +2,7 @@ package iaf.ofek.hadracha.base_course.web_server.AirSituation;
 
 import org.junit.Test;
 
+import javax.validation.constraints.AssertTrue;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -26,5 +27,15 @@ public class AirplaneKindTest {
             add(AirplaneKind.Yanshoof);
             add(AirplaneKind.Zik);
         }}, leaves);
+    }
+
+    @Test
+    public void isDescendantOf() {
+        assertTrue(AirplaneKind.F15.isDescendantOf(AirplaneKind.Krav));
+        assertTrue(AirplaneKind.F16.isDescendantOf(AirplaneKind.Krav));
+        assertTrue(AirplaneKind.Saraf.isDescendantOf(AirplaneKind.Maskar));
+        assertTrue(AirplaneKind.Yanshoof.isDescendantOf(AirplaneKind.Masaar));
+        assertTrue(AirplaneKind.Shoval.isDescendantOf(AirplaneKind.Katmam));
+        assertTrue(AirplaneKind.Zik.isDescendantOf(AirplaneKind.Zik));
     }
 }

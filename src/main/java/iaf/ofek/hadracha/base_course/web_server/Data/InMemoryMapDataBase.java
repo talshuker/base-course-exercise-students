@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 public class InMemoryMapDataBase implements CrudDataBase {
 
     private Map<Integer, Entity> data = new HashMap<>();
-    private int id=0;
+    private int id=1;
 
     @Override
     public <T extends Entity> @Nullable T getByID(int id) throws ClassCastException {
@@ -27,10 +27,12 @@ public class InMemoryMapDataBase implements CrudDataBase {
 
     @Override
     public <T extends Entity> int create(T entity) {
-        int newId=id++;
-        entity.setId(newId);
-        data.put(newId,entity);
-        return newId;
+        if (entity.getId()<0) {
+            int newId = id++;
+            entity.setId(newId);
+        }
+        data.put(entity.getId(), entity);
+        return entity.getId();
     }
 
     @Override
