@@ -17,7 +17,7 @@ public interface CrudDataBase {
      * @throws ClassCastException in case that the entity is not of type T
      */
     @Nullable
-    <T extends Entity> T getByID(int id) throws ClassCastException;
+    <T extends Entity> T getByID(int id, Class<T> type) throws ClassCastException;
 
     /**
      * Returns a list of all the entities of type T (also given as parameter)
@@ -35,7 +35,7 @@ public interface CrudDataBase {
      * @param <T> the type of the entity
      * @return the new ID of this entity.
      */
-    <T extends Entity> int create(T entity);
+    <T extends Entity> int create(T entity) throws IllegalArgumentException;
 
     /**
      * The entity will be saved to the data base, as an update to the entity with the same ID
@@ -50,5 +50,5 @@ public interface CrudDataBase {
      * @param id the ID of the entity to delete
      * @throws IllegalArgumentException if an entity with this ID does not exist
      */
-    void delete(int id) throws IllegalArgumentException;
+    <T extends Entity>  void delete(int id, Class<T> type) throws IllegalArgumentException;
 }

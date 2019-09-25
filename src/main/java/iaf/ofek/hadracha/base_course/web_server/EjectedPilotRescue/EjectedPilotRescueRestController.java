@@ -1,7 +1,6 @@
 package iaf.ofek.hadracha.base_course.web_server.EjectedPilotRescue;
 
 import iaf.ofek.hadracha.base_course.web_server.Data.CrudDataBase;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,7 +27,7 @@ public class EjectedPilotRescueRestController {
 
     @GetMapping("/takeResponsibility")
     public void takeResponsibility(@RequestParam("ejectionId") int ejectionId, @CookieValue("client-id") String clientId){
-        EjectedPilotInfo ejectedPilotInfo = dataBase.getByID(ejectionId);
+        EjectedPilotInfo ejectedPilotInfo = dataBase.getByID(ejectionId, EjectedPilotInfo.class);
         if (ejectedPilotInfo == null) {
             throw new IllegalArgumentException("No such ejection");
         }

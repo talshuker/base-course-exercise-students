@@ -32,11 +32,12 @@ public class LaunchesRestController {
             @RequestParam("launch_lat") float launchLat,
             @RequestParam("launch_lon") float launchLon,
             @RequestParam("impact_lat") float impactLat,
-            @RequestParam("impact_lon") float impactLon) throws UserArgumentException {
+            @RequestParam("impact_lon") float impactLon,
+            @RequestParam("name") String name) throws UserArgumentException {
 
         return dataBase.create(
                 new Launch(
-                        new Coordinates(launchLat, launchLon), new Coordinates(impactLat, impactLon)
+                        new Coordinates(launchLat, launchLon), new Coordinates(impactLat, impactLon), name
                 )
         );
     }
@@ -56,7 +57,7 @@ public class LaunchesRestController {
             throw new UserArgumentException("Impact point sent with only LAT or LON");
         }
 
-        Launch launch = dataBase.getByID(id);
+        Launch launch = dataBase.getByID(id, Launch.class);
         if (launch==null)
             throw new UserArgumentException("No launch with this ID exists");
 

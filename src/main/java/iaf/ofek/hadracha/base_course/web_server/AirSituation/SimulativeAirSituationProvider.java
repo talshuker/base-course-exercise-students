@@ -98,9 +98,8 @@ public class SimulativeAirSituationProvider implements AirSituationProvider {
             }
         }
         catch (Exception e){
-            System.err.println(e.getMessage());
+            System.err.println("Error while updating air situation picture" + e.getMessage());
             e.printStackTrace();
-            int x=1;
         }
     }
 

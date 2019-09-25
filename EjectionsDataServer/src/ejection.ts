@@ -6,7 +6,7 @@ export class Coordinates{
     lon: number
 }
 export class Ejection {
-    static lastId=0;
+    static lastId=1;
     id: number
     coordinates: Coordinates
     pilotName: string

@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
     <head>
-        <title>launches-ui</title>
+        <title>מערכת שליטה - תרגיל לקורס אופק</title>
         <meta charset="utf-8">
         <link rel="stylesheet" href="./leaflet/dist/leaflet.css">
         <link rel="stylesheet" href="./style.css">
@@ -16,7 +16,12 @@
     </head>
     <body>
         <div id="mapid"></div>
-        <div style="position: absolute; right: 10px; top: 10px; z-index: 10000;"><button id="launchModeBtn">דקור שיגור חדש</button></div>
+        <div style="position: absolute; right: 10px; top: 10px; z-index: 10000;">
+            <button id="launchModeBtn">
+                <div>דקור שיגור חדש</div>
+                <div dir="rtl">בשם: <input type="text" id="launchName"/></div>
+            </button>
+        </div>
 
         <script src="/jquery/dist/jquery.js"></script>
         <script src="/leaflet/dist/leaflet.js"></script>
@@ -65,7 +70,7 @@
             function getAllLaunches(){
                 sendToServer('/launches', (response) => {
                     response.forEach(launch => {
-                        let mapLaunch = new Launching([launch.launchPoint.lat,launch.launchPoint.lon]);
+                        let mapLaunch = new Launching([launch.launchPoint.lat,launch.launchPoint.lon], launch.name);
                         mapLaunch.setHitPoint( [launch.impactPoint.lat, launch.impactPoint.lon]);
                         mapLaunch.launchMarker.addTo(map);
                         mapLaunch.hitMarker.addTo(map);
@@ -83,16 +88,26 @@
                 let latlng = e.latlng
                 
                 if(!isInLaunchingCreation) {
+                    let name = $("#launchName").val();
+                    if (!name){
+                        alert("אנא הכנס שם לשיגור");
+                        return;
+                    }
+
                     isInLaunchingCreation = true;
-                    var launching = new Launching([latlng.lat, latlng.lng]);
+                    var launching = new Launching([latlng.lat, latlng.lng], name);
                     // launch_lat, launch_lon, impact_lat, impact_lon    
                     launching.launchMarker.addTo(map)
                     lanches.push(launching)
                 } else {
+
                     var launching = lanches[lanches.length - 1]
                     launching.setHitPoint([latlng.lat, latlng.lng])
                     
-                    sendToServer('/launches/createLaunch?launch_lat='+launching.launcPoint.lat+'&launch_lon='+launching.launcPoint.lng+'&impact_lat='+launching.hitPoint.lat+'&impact_lon='+launching.hitPoint.lng,
+                    sendToServer('/launches/createLaunch?launch_lat='
+                                            +launching.launcPoint.lat+'&launch_lon='+launching.launcPoint.lng
+                                            +'&impact_lat='+launching.hitPoint.lat+'&impact_lon='+launching.hitPoint.lng
+                                            +'&name='+launching.name,
                                     function(response){
                                         var launchId = response
                                         launching.id = launchId
@@ -113,10 +128,12 @@
             map.on('click', onMapClick)
 
             class Launching {
-                constructor(launcPoint, hitPoint){
-                    this.launchIcon = L.icon({
-                        iconUrl: 'images/Launch.png',
+                constructor(launcPoint, name){
+                    this.name = name;
 
+                    this.launchIcon = L.divIcon({
+                        html: "<img src='images/Launch.png'/><div>"+name+"</div>",
+                        className: 'launch-icon',
                         iconSize: [32, 32],
                         iconAnchor: [16, 16]
                     });   
@@ -219,7 +236,8 @@
 
                     this.icon = L.divIcon({
                         // iconUrl: 'images/'+this.kind+'.png',
-                        html: "<div style='transform: rotate("+this.azimuth+"deg);background-image: url(\"images/"+this.kind+".svg\")'></div>",
+                        html: "<div class='icon' style='transform: rotate("+this.azimuth+"deg);background-image: url(\"images/"+this.kind+".svg\")'></div>"+
+                              "<p class='plane-name'>"+airplaneFromServer.airplaneKind+"</p>",
                         className: 'airplane-icon',
                         iconSize: [30, 32],
                         iconAnchor: [15, 16]
@@ -230,7 +248,7 @@
                                                 icon: this.icon,
 
                                             });
-                    this.marker.bindTooltip(airplaneFromServer.airplaneKind);
+                    // this.marker.bindTooltip(airplaneFromServer.airplaneKind, {direction: 'bottom', offest: L.Point(20,-5)});
                     this.marker.addTo(map);
                 }
 
@@ -249,7 +267,8 @@
                         else iconColor = "_gray";
 
                         this.marker.setIcon(L.divIcon({
-                            html: "<div style='transform: rotate("+this.azimuth+"deg);background-image: url(\"images/"+this.kind+iconColor+".svg\")'></div>",
+                            html: "<div class='icon' style='transform: rotate("+this.azimuth+"deg);background-image: url(\"images/"+this.kind+iconColor+".svg\")'></div>"+
+                              "<p class='plane-name'>"+airplaneFromServer.airplaneKind+"</p>",
                             className: 'airplane-icon',
                             iconSize: [30, 32],
                             iconAnchor: [15, 16]

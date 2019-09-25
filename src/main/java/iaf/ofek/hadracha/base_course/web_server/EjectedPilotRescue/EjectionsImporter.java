@@ -54,7 +54,7 @@ public class EjectionsImporter {
             List<EjectedPilotInfo> removedEjections = listOperations.subtract(previousEjections, updatedEjections, new Entity.ByIdEqualizer<>());
 
             addedEjections.forEach(dataBase::create);
-            removedEjections.stream().map(EjectedPilotInfo::getId).forEach(dataBase::delete);
+            removedEjections.stream().map(EjectedPilotInfo::getId).forEach(id -> dataBase.delete(id, EjectedPilotInfo.class));
         } catch (RestClientException e) {
             System.err.println("Could not get ejections: " + e.getMessage());
             e.printStackTrace();

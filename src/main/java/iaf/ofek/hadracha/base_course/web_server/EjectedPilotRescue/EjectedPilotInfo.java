@@ -1,12 +1,11 @@
 package iaf.ofek.hadracha.base_course.web_server.EjectedPilotRescue;
 
 import iaf.ofek.hadracha.base_course.web_server.AirSituation.Airplane;
-import iaf.ofek.hadracha.base_course.web_server.Data.Entity;
 import iaf.ofek.hadracha.base_course.web_server.Data.Coordinates;
+import iaf.ofek.hadracha.base_course.web_server.Data.Entity;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class EjectedPilotInfo implements Entity<EjectedPilotInfo> {
     private int id;
@@ -54,7 +53,7 @@ public class EjectedPilotInfo implements Entity<EjectedPilotInfo> {
                 .forEach(allocatedAirplane -> allocatedAirplane.arrivedAtDestination=true);
 
         if (allocatedAirplanes.stream().allMatch(allocatedAirplane -> allocatedAirplane.arrivedAtDestination)){
-            allocatedAirplanes.stream().forEach(allocatedAirplane -> allocatedAirplane.airplane.unAllocate());
+            allocatedAirplanes.forEach(allocatedAirplane -> allocatedAirplane.airplane.unAllocate());
         }
     }
 
@@ -62,7 +61,7 @@ public class EjectedPilotInfo implements Entity<EjectedPilotInfo> {
         Airplane airplane;
         boolean arrivedAtDestination;
 
-        public AllocatedAirplane(Airplane airplane) {
+        AllocatedAirplane(Airplane airplane) {
             this.airplane = airplane;
         }
     }

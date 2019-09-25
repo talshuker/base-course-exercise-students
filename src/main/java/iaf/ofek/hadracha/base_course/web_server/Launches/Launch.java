@@ -8,10 +8,12 @@ public class Launch implements Entity<Launch> {
     private int id;
     public Coordinates launchPoint;
     public Coordinates impactPoint;
+    public String name;
 
-    public Launch(Coordinates launchPoint, Coordinates impactPoint) {
+    public Launch(Coordinates launchPoint, Coordinates impactPoint, String name) {
         this.launchPoint = launchPoint;
         this.impactPoint = impactPoint;
+        this.name = name;
     }
 
     @Override
