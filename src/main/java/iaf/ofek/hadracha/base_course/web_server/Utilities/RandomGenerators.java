@@ -20,7 +20,7 @@ public class RandomGenerators {
     }
 
     /**
-     * Generate a double between min (inclusive) and max (exclusive).
+     * Generate a double between min (inclusive) and max (exclusive) with normal distribution.
      */
     public double generateRandomDoubleInRangeWithNormalDistribution(double min, double max) {
         // In case that min and max are wrong, flip them

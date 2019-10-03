@@ -114,10 +114,11 @@ public class SimulativeAirSituationProvider implements AirSituationProvider {
 
             double azimuthToDestenation = geographicCalculations.azimuthBetween(currLocation, headingTo);
             double differnceOfAzimuth = 180-geographicCalculations.normalizeAzimuth(azimuthToDestenation - airplane.getAzimuth());
-            double distanceToDestenation = geographicCalculations.distanceBetween(currLocation, headingTo);
 
             return (differnceOfAzimuth > 0 ? Math.min(AZIMUTH_STEP*10, differnceOfAzimuth/5) : Math.max(-AZIMUTH_STEP*10, differnceOfAzimuth/5))/2;
-        } else {
+
+        }
+        else {
             if (random.nextDouble() < CHANCE_FOR_AZIMUTH_CHANGE)       // chance for any change
                 if (random.nextDouble() < CHANCE_FOR_AZIMUTH_CHANGE)   // chance for big change
                     return randomGenerators.generateRandomDoubleInRange(-AZIMUTH_STEP, AZIMUTH_STEP);
