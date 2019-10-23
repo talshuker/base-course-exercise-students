@@ -51,7 +51,6 @@ public class SimulativeAirSituationProvider implements AirSituationProvider {
         for (int i = 0; i < INITIAL_NUM_OF_AIRPLANES; i++) {
             addNewAirplane();
         }
-        //lastId=INITIAL_NUM_OF_AIRPLANES;
 
         executor.scheduleAtFixedRate(this::UpdateSituation, 0, SIMULATION_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
     }
@@ -139,7 +138,6 @@ public class SimulativeAirSituationProvider implements AirSituationProvider {
     private double worldAzimuthToEuclidRadians(double azimuth) {
         double inEuclidDegrees = -azimuth + 90;
         return inEuclidDegrees * Math.PI / 180;
-//        return azimuth * Math.PI /180;
     }
 
     @Override

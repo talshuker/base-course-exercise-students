@@ -1,9 +1,6 @@
 group 'hadrache.base-course'
 version '1.0-SNAPSHOT'
 
-//def ofek_maam_util_build = '1.3.1-NO_JACOCO_DONT_USE'
-//apply from: "http://nexus.app.iaf/nexus/content/repositories/galaxy-hermes-snapshot/ofek/maam/util/build/$ofek_maam_util_build/build-$ofek_maam_util_build-build.gradle"
-
 buildscript {
     repositories {
         maven { url 'http://nexus.app.iaf/nexus/content/repositories/ext-releases-local/'}
@@ -14,8 +11,6 @@ buildscript {
 }
 
 repositories {
-//    ofekRepository it
-
     maven {
         url 'http://nexus.app.iaf/nexus/content/repositories/ext-releases-local/'
     }

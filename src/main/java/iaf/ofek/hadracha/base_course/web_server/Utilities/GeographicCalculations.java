@@ -35,8 +35,7 @@ public class GeographicCalculations {
 
     /**
      * normalize azimuth to be in [0..360)
-     * @param azimuth
-     * @return
+     * @param azimuth in degrees
      */
     public double normalizeAzimuth(double azimuth) {
         while (azimuth<0)
