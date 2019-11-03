@@ -53,8 +53,8 @@
 
 
             var map = L.map('mapid', {maxZoom: 50}).setView([32, 35], 8)
-            L.tileLayer('http://rol-dev-geo-1:8080/wmts/BestMap-gm_flat_ll/{z}-{x}-{y}.png').addTo(map)
-            // L.tileLayer('http://rol-dev-geo-1:8080/wmts/IsraelVectorBasis-gm_flat_ll/{z}-{x}-{y}.png').addTo(map)
+            L.tileLayer('http://rol-int-geo-1:8080/wmts/BestMap-gm_flat_ll/{z}-{x}-{y}.png').addTo(map)
+            // L.tileLayer('http://rol-int-geo-1:8080/wmts/IsraelVectorBasis-gm_flat_ll/{z}-{x}-{y}.png').addTo(map)
             
             var markersLayer = new L.LayerGroup();
             let inCreateLaunchMode = false;
