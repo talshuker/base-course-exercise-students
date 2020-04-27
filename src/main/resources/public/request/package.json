@@ -18,7 +18,7 @@
   "_requiredBy": [
     "/"
   ],
-  "_resolved": "http://nexus.app.iaf:8081/nexus/repository/onpm/request/-/request-2.88.0.tgz",
+  "_resolved": "o-npm-nexus/request-2.88.0.tgz",
   "_shasum": "b4962b099e2434fbecc4750f94965c81abda58a3",
   "_spec": "request@^2.88.0",
   "_where": "C:\\git_ws\\galaxyasclient\\launches-ui",
