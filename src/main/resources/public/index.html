@@ -3,9 +3,12 @@
     <head>
         <title>מערכת שליטה - תרגיל לקורס אופק</title>
         <meta charset="utf-8">
-        <link rel="stylesheet" href="./leaflet/dist/leaflet.css">
+        <link rel="stylsheet" href="./leaflet/dist/leaflet.css">
         <link rel="stylesheet" href="./style.css">
-        
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+              integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+              crossorigin=""/>
+
         <style>
             #mapid
             {
@@ -15,7 +18,8 @@
         </style>
     </head>
     <body>
-        <div id="mapid"></div>
+        <div id="mapid">
+        </div>
         <div style="position: absolute; right: 10px; top: 10px; z-index: 10000;">
             <button id="launchModeBtn">
                 <div>דקור שיגור חדש</div>
@@ -25,6 +29,10 @@
 
         <script src="/jquery/dist/jquery.js"></script>
         <script src="/leaflet/dist/leaflet.js"></script>
+        <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+                integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+                crossorigin=""></script>
+
         <!-- <script src="/request/request.js"></script> -->
         <script>
             // calls a URL with GET, and calls the callback with the parsed JSON as a response
@@ -53,8 +61,7 @@
 
 
             var map = L.map('mapid', {maxZoom: 50}).setView([32, 35], 8)
-            L.tileLayer('http://rol-int-geo-1:8080/wmts/BestMap-gm_flat_ll/{z}-{x}-{y}.png').addTo(map)
-            // L.tileLayer('http://rol-int-geo-1:8080/wmts/IsraelVectorBasis-gm_flat_ll/{z}-{x}-{y}.png').addTo(map)
+
             
             var markersLayer = new L.LayerGroup();
             let inCreateLaunchMode = false;
