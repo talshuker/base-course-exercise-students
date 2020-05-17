@@ -3,23 +3,18 @@
     <head>
         <title>מערכת שליטה - תרגיל לקורס אופק</title>
         <meta charset="utf-8">
-        <link rel="stylsheet" href="./leaflet/dist/leaflet.css">
         <link rel="stylesheet" href="./style.css">
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
               integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
               crossorigin=""/>
 
         <style>
-            #mapid
-            {
-                height: 100vh;
-                background-color: black;
-            }
+           #mapid { height: 100vh;}
         </style>
     </head>
     <body>
-        <div id="mapid">
-        </div>
+        <div id="mapid"></div>
+
         <div style="position: absolute; right: 10px; top: 10px; z-index: 10000;">
             <button id="launchModeBtn">
                 <div>דקור שיגור חדש</div>
@@ -27,11 +22,11 @@
             </button>
         </div>
 
-        <script src="/jquery/dist/jquery.js"></script>
-        <script src="/leaflet/dist/leaflet.js"></script>
         <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
                 integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
                 crossorigin=""></script>
+
+        <script src="/jquery/dist/jquery.js"></script>
 
         <!-- <script src="/request/request.js"></script> -->
         <script>
@@ -60,9 +55,10 @@
             // ---------------- Launches -------------------
 
 
-            var map = L.map('mapid', {maxZoom: 50}).setView([32, 35], 8)
+            var map = L.map('mapid', {maxZoom: 50}).setView([32, 35], 8);
 
-            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png?{foo}', {foo: 'bar', attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'}).addTo(map);
+
             var markersLayer = new L.LayerGroup();
             let inCreateLaunchMode = false;
             var isInLaunchingCreation = false
