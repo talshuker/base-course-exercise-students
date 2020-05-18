@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -62,11 +63,21 @@ public class EjectionsImporter {
     }
 
     private List<EjectedPilotInfo> fetchFromEjectionService() {
+        List<EjectedPilotInfo> ejectionsFromServer;
         ResponseEntity<List<EjectedPilotInfo>> responseEntity = restTemplate.exchange(
                     EJECTION_SERVER_URL + "/ejections?name=" + NAMESPACE, HttpMethod.GET,
                     null, new ParameterizedTypeReference<List<EjectedPilotInfo>>() {
                     });
-            return responseEntity.getBody();
+        ejectionsFromServer = responseEntity.getBody();
+        shiftNorth(ejectionsFromServer);
+        return ejectionsFromServer;
 
+    }
+
+    @NotNull
+    private void shiftNorth(List<EjectedPilotInfo> ejections){
+        for(EjectedPilotInfo ejectedPilotInfo: ejections) {
+            ejectedPilotInfo.coordinates.lat += 1.7;
+        }
     }
 }

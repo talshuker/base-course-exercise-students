@@ -13,8 +13,8 @@ import java.util.stream.Stream;
 
 public enum AirplaneKind{
     Krav(null,"קרב", 10.0), F15(Krav, "F15"), F16(Krav, "F16"),
-    Katmam(null, "כטמ\"מ", 0.5), Zik(Katmam, "זיק"), Shoval(Katmam, "שובל"),
-    Helicopter(null, "מסוק", 1.5), Maskar(Helicopter, "מסק\"ר"), Masaar(Helicopter, "מסע\"ר "),
+    Katmam(null, "כטמ\"מ", 1.75), Zik(Katmam, "זיק"), Shoval(Katmam, "שובל"),
+    Helicopter(null, "מסוק", 3.0), Maskar(Helicopter, "מסק\"ר"), Masaar(Helicopter, "מסע\"ר "),
     Yanshoof(Masaar, "ינשוף"), Saraf(Maskar, "שרף");
 
 

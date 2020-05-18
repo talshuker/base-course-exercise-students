@@ -18,15 +18,15 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class SimulativeAirSituationProvider implements AirSituationProvider {
 
-    private static final int INITIAL_NUM_OF_AIRPLANES = 50;
+    private static final int INITIAL_NUM_OF_AIRPLANES = 80;
     private static final double CHANCE_FOR_NUMBER_CHANGE = 0.005;
     private static final double CHANCE_FOR_AZIMUTH_CHANGE = 0.05;
-    private static final int STEP_SIZE = 10;
+    private static final int STEP_SIZE = 15;
     private static final int SIMULATION_INTERVAL_MILLIS = 100;
-    private static final double LAT_MIN = 27.000;
-    private static final double LAT_MAX = 33.000;
-    private static final double LON_MIN = 30.000;
-    private static final double LON_MAX = 41.000;
+    private static final double LAT_MIN = 29.000;
+    private static final double LAT_MAX = 36.000;
+    private static final double LON_MIN = 32.000;
+    private static final double LON_MAX = 46.500;
     private static final double AZIMUTH_STEP = STEP_SIZE / (2000.0 / SIMULATION_INTERVAL_MILLIS);
     private static final double MINIMAL_DISTANCE_FOR_ARRIVAL = 500; // the distance in which an airplane is considered as "arrived", in meters
 
