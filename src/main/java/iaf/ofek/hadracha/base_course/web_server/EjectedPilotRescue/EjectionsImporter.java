@@ -47,19 +47,7 @@ public class EjectionsImporter {
     }
 
     private void updateEjections() {
-        try {
-            List<EjectedPilotInfo> updatedEjections = fetchFromEjectionService();
-            List<EjectedPilotInfo> previousEjections = dataBase.getAllOfType(EjectedPilotInfo.class);
-
-            List<EjectedPilotInfo> addedEjections = listOperations.subtract(updatedEjections, previousEjections, new Entity.ByIdEqualizer<>());
-            List<EjectedPilotInfo> removedEjections = listOperations.subtract(previousEjections, updatedEjections, new Entity.ByIdEqualizer<>());
-
-            addedEjections.forEach(dataBase::create);
-            removedEjections.stream().map(EjectedPilotInfo::getId).forEach(id -> dataBase.delete(id, EjectedPilotInfo.class));
-        } catch (RestClientException e) {
-            System.err.println("Could not get ejections: " + e.getMessage());
-            e.printStackTrace();
-        }
+        //TODO by students
     }
 
     private List<EjectedPilotInfo> fetchFromEjectionService() {
