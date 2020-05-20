@@ -47,25 +47,37 @@ public class EjectionsImporter {
     }
 
     private void updateEjections() {
-        //TODO by students
-    }
-
-    private List<EjectedPilotInfo> fetchFromEjectionService() {
-        List<EjectedPilotInfo> ejectionsFromServer;
-        ResponseEntity<List<EjectedPilotInfo>> responseEntity = restTemplate.exchange(
+        try {
+            List<EjectedPilotInfo> ejectionsFromServer;
+            ResponseEntity<List<EjectedPilotInfo>> responseEntity = restTemplate.exchange(
                     EJECTION_SERVER_URL + "/ejections?name=" + NAMESPACE, HttpMethod.GET,
                     null, new ParameterizedTypeReference<List<EjectedPilotInfo>>() {
                     });
-        ejectionsFromServer = responseEntity.getBody();
-        shiftNorth(ejectionsFromServer);
-        return ejectionsFromServer;
+            ejectionsFromServer = responseEntity.getBody();
+            if (ejectionsFromServer != null) {
+                for(EjectedPilotInfo ejectedPilotInfo: ejectionsFromServer) {
+                    ejectedPilotInfo.coordinates.lat += 1.7;
+                }
+            }
+            List<EjectedPilotInfo> updatedEjections = ejectionsFromServer;
+            List<EjectedPilotInfo> previousEjections = dataBase.getAllOfType(EjectedPilotInfo.class);
 
+            List<EjectedPilotInfo> addedEjections = ejectionsToAdd(updatedEjections, previousEjections);
+            List<EjectedPilotInfo> removedEjections = ejectionsToRemove(updatedEjections, previousEjections);
+
+            addedEjections.forEach(dataBase::create);
+            removedEjections.stream().map(EjectedPilotInfo::getId).forEach(id -> dataBase.delete(id, EjectedPilotInfo.class));
+        } catch (RestClientException e) {
+            System.err.println("Could not get ejections: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
-    @NotNull
-    private void shiftNorth(List<EjectedPilotInfo> ejections){
-        for(EjectedPilotInfo ejectedPilotInfo: ejections) {
-            ejectedPilotInfo.coordinates.lat += 1.7;
-        }
+    private List<EjectedPilotInfo> ejectionsToRemove(List<EjectedPilotInfo> updatedEjections, List<EjectedPilotInfo> previousEjections) {
+        return listOperations.subtract(previousEjections, updatedEjections, new Entity.ByIdEqualizer<>());
+    }
+
+    private List<EjectedPilotInfo> ejectionsToAdd(List<EjectedPilotInfo> updatedEjections, List<EjectedPilotInfo> previousEjections) {
+        return listOperations.subtract(updatedEjections, previousEjections, new Entity.ByIdEqualizer<>());
     }
 }
