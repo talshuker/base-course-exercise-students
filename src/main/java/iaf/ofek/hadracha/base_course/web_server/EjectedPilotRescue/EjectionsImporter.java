@@ -86,4 +86,14 @@ public class EjectionsImporter {
         return dataBase.getAllOfType(EjectedPilotInfo.class);
     }
 
+    public void takeResponsibility(int ejectionId, String clientId){
+        EjectedPilotInfo ejectedPilot = dataBase.getByID(ejectionId, EjectedPilotInfo.class);
+
+        if (ejectedPilot != null && ejectedPilot.rescuedBy == null) {
+            ejectedPilot.rescuedBy = clientId;
+            dataBase.update(ejectedPilot);
+        }
+    }
+
+
 }

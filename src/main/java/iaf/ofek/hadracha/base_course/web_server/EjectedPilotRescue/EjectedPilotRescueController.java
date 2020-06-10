@@ -2,9 +2,7 @@ package iaf.ofek.hadracha.base_course.web_server.EjectedPilotRescue;
 
 import iaf.ofek.hadracha.base_course.web_server.AirSituation.AirSituationProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -20,5 +18,10 @@ public class EjectedPilotRescueController {
     @GetMapping("/infos")
     public List<EjectedPilotInfo> getInfo(){
         return ejectionsImporter.getAllEjections();
+    }
+
+    @GetMapping("/takeResponsibility")
+    public void takeResponsibility(@RequestParam int ejectionId, @CookieValue(value = "client-id", defaultValue = "") String clientId){
+        ejectionsImporter.takeResponsibility(ejectionId, clientId);
     }
 }
