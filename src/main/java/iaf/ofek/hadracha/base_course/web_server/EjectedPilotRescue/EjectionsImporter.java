@@ -81,4 +81,9 @@ public class EjectionsImporter {
     private List<EjectedPilotInfo> ejectionsToAdd(List<EjectedPilotInfo> updatedEjections, List<EjectedPilotInfo> previousEjections) {
         return listOperations.subtract(updatedEjections, previousEjections, new Entity.ByIdEqualizer<>());
     }
+
+    public List<EjectedPilotInfo> getAllEjections(){
+        return dataBase.getAllOfType(EjectedPilotInfo.class);
+    }
+
 }
