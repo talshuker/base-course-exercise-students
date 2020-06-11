@@ -50,48 +50,51 @@ public class EjectionsImporter {
 
     private void updateEjections() {
         try {
-            List<EjectedPilotInfo> ejectionsFromServer;
-            ResponseEntity<List<EjectedPilotInfo>> responseEntity = restTemplate.exchange(
-                    EJECTION_SERVER_URL + "/ejections?name=" + NAMESPACE, HttpMethod.GET,
-                    null, new ParameterizedTypeReference<List<EjectedPilotInfo>>() {
-                    });
-            ejectionsFromServer = responseEntity.getBody();
+            List<EjectedPilotInfo> ejectionsFromServer = getEjectionsFromServer();
             if (ejectionsFromServer != null) {
-                for(EjectedPilotInfo ejectedPilotInfo: ejectionsFromServer) {
-                    ejectedPilotInfo.coordinates.lat += SHIFT_NORTH;
-                }
+                shiftAirPlanes(ejectionsFromServer);
             }
-            List<EjectedPilotInfo> updatedEjections = ejectionsFromServer;
+
             List<EjectedPilotInfo> previousEjections = dataBase.getAllOfType(EjectedPilotInfo.class);
+            ejectionsDifference(ejectionsFromServer, previousEjections);
 
-            List<EjectedPilotInfo> addedEjections = ejectionsToAdd(updatedEjections, previousEjections);
-            List<EjectedPilotInfo> removedEjections = ejectionsToRemove(updatedEjections, previousEjections);
-
-            addedEjections.forEach(dataBase::create);
-            removedEjections.stream().map(EjectedPilotInfo::getId).forEach(id -> dataBase.delete(id, EjectedPilotInfo.class));
         } catch (RestClientException e) {
             System.err.println("Could not get ejections: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    private List<EjectedPilotInfo> ejectionsToRemove(List<EjectedPilotInfo> updatedEjections, List<EjectedPilotInfo> previousEjections) {
-        return listOperations.subtract(previousEjections, updatedEjections, new Entity.ByIdEqualizer<>());
+    private void shiftAirPlanes(List<EjectedPilotInfo> ejectionsFromServer) {
+        for (EjectedPilotInfo ejectedPilotInfo : ejectionsFromServer) {
+            ejectedPilotInfo.getCoordinates().lat += SHIFT_NORTH;
+        }
     }
 
-    private List<EjectedPilotInfo> ejectionsToAdd(List<EjectedPilotInfo> updatedEjections, List<EjectedPilotInfo> previousEjections) {
-        return listOperations.subtract(updatedEjections, previousEjections, new Entity.ByIdEqualizer<>());
+    private List<EjectedPilotInfo> getEjectionsFromServer() {
+        List<EjectedPilotInfo> ejectionsFromServer;
+        ResponseEntity<List<EjectedPilotInfo>> responseEntity = restTemplate.exchange(
+                EJECTION_SERVER_URL + "/ejections?name=" + NAMESPACE, HttpMethod.GET,
+                null, new ParameterizedTypeReference<List<EjectedPilotInfo>>() {
+                });
+        ejectionsFromServer = responseEntity.getBody();
+        return ejectionsFromServer;
     }
 
-    public List<EjectedPilotInfo> getAllEjections(){
+    private void ejectionsDifference(List<EjectedPilotInfo> updatedEjections, List<EjectedPilotInfo> previousEjections) {
+        List<EjectedPilotInfo> addedEjections = listOperations.subtract(updatedEjections, previousEjections, new Entity.ByIdEqualizer<>());
+        addedEjections.forEach(dataBase::create);
+        List<EjectedPilotInfo> removedEjections = listOperations.subtract(previousEjections, updatedEjections, new Entity.ByIdEqualizer<>());
+        removedEjections.stream().map(EjectedPilotInfo::getId).forEach(id -> dataBase.delete(id, EjectedPilotInfo.class));
+    }
+
+    public List<EjectedPilotInfo> getAllEjections() {
         return dataBase.getAllOfType(EjectedPilotInfo.class);
     }
 
-    public void takeResponsibility(int ejectionId, String clientId){
+    public void takeResponsibility(int ejectionId, String clientId) {
         EjectedPilotInfo ejectedPilot = dataBase.getByID(ejectionId, EjectedPilotInfo.class);
-
-        if (ejectedPilot != null && ejectedPilot.rescuedBy == null) {
-            ejectedPilot.rescuedBy = clientId;
+        if (ejectedPilot != null && ejectedPilot.getRescuedBy() == null) {
+            ejectedPilot.setRescuedBy(clientId);
             airplanesAllocationManager.allocateAirplanesForEjection(ejectedPilot, clientId);
             dataBase.update(ejectedPilot);
         }
